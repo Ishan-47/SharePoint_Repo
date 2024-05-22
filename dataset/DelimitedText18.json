@@ -1,0 +1,163 @@
+{
+	"name": "DelimitedText18",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Folder": {
+				"type": "string"
+			},
+			"File": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileSystem": "client"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "Theme",
+				"type": "String"
+			},
+			{
+				"name": "Project ID",
+				"type": "String"
+			},
+			{
+				"name": "Project Name",
+				"type": "String"
+			},
+			{
+				"name": "Project Brief",
+				"type": "String"
+			},
+			{
+				"name": "Project Status",
+				"type": "String"
+			},
+			{
+				"name": "Project Start",
+				"type": "String"
+			},
+			{
+				"name": "Project End",
+				"type": "String"
+			},
+			{
+				"name": "Type of Contract",
+				"type": "String"
+			},
+			{
+				"name": "Project Cost",
+				"type": "String"
+			},
+			{
+				"name": "Allocated Budget",
+				"type": "String"
+			},
+			{
+				"name": "Source",
+				"type": "String"
+			},
+			{
+				"name": "Remaining",
+				"type": "String"
+			},
+			{
+				"name": "Source of Remaining",
+				"type": "String"
+			},
+			{
+				"name": "Project Manager",
+				"type": "String"
+			},
+			{
+				"name": "Project Lead",
+				"type": "String"
+			},
+			{
+				"name": "Support Team",
+				"type": "String"
+			},
+			{
+				"name": "Fund Raised By",
+				"type": "String"
+			},
+			{
+				"name": "Sectors",
+				"type": "String"
+			},
+			{
+				"name": "Support By",
+				"type": "String"
+			},
+			{
+				"name": "Ghadan Project (Yes/No)",
+				"type": "String"
+			},
+			{
+				"name": "Vintage (New/Ongoing)",
+				"type": "String"
+			},
+			{
+				"name": "Status",
+				"type": "String"
+			},
+			{
+				"name": "Total Estimated Budget",
+				"type": "String"
+			},
+			{
+				"name": "Proposed Estimated Budget",
+				"type": "String"
+			},
+			{
+				"name": "Budget spent YTD",
+				"type": "String"
+			},
+			{
+				"name": "Approved Budget CY",
+				"type": "String"
+			},
+			{
+				"name": "Social Sector Objective",
+				"type": "String"
+			},
+			{
+				"name": "Department",
+				"type": "String"
+			},
+			{
+				"name": "Entity Implementing the project",
+				"type": "String"
+			},
+			{
+				"name": "Source of Fund",
+				"type": "String"
+			},
+			{
+				"name": "Owner",
+				"type": "String"
+			},
+			{
+				"name": "Project Type (Strategic / Operational)",
+				"type": "String"
+			},
+			{
+				"name": "Thematic Strategy",
+				"type": "String"
+			}
+		]
+	}
+}
