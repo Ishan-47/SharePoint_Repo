@@ -1,0 +1,181 @@
+{
+	"name": "Transforming_Data_SC",
+	"properties": {
+		"activities": [
+			{
+				"name": "Transformations - Adding Upload TimeStamp",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "Create Table If Not Exits",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "Tranformation_dataflow_SC_Projects",
+						"type": "DataFlowReference"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "Create Table If Not Exits",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'sc')\r\nBEGIN\r\n    CREATE TABLE sc (\r\n    Theme VARCHAR(255),\r\n    ProjectID INT,\r\n    ProjectName VARCHAR(255),\r\n    ProjectBrief VARCHAR(8000),\r\n    ProjectStatus VARCHAR(255),\r\n    ProjectStart DATE,\r\n    ProjectEnd DATE,\r\n    TypeOfContract VARCHAR(255),\r\n    ProjectCost DECIMAL(18, 2),\r\n    AllocatedBudget DECIMAL(18, 2),\r\n    Source VARCHAR(255),\r\n    Remaining DECIMAL(18, 2),\r\n    SourceOfRemaining VARCHAR(255),\r\n    ProjectManager VARCHAR(255),\r\n    ProjectLead VARCHAR(255),\r\n    SupportTeam VARCHAR(255),\r\n    FundRaisedBy VARCHAR(255),\r\n    Sectors VARCHAR(255),\r\n    SupportBy VARCHAR(255),\r\n    GhadanProject BIT,\r\n    Vintage VARCHAR(255),\r\n    Status VARCHAR(255),\r\n    TotalEstimatedBudget DECIMAL(18, 2),\r\n    ProposedEstimatedBudget DECIMAL(18, 2),\r\n    BudgetSpentYTD DECIMAL(18, 2),\r\n    ApprovedBudgetCY DECIMAL(18, 2),\r\n    SocialSectorObjective VARCHAR(255),\r\n    Department VARCHAR(255),\r\n    EntityImplementingTheProject VARCHAR(255),\r\n    SourceOfFund VARCHAR(255),\r\n    Owner VARCHAR(255),\r\n    ProjectType VARCHAR(255),\r\n    ThematicStrategy VARCHAR(255),\r\n    UploadDate DATE\r\n    );\r\nEND\r\n"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "Updating Main Table On Sucess",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "Transformations - Adding Upload TimeStamp",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"parameters": [
+								{
+									"name": "pipelineid",
+									"type": "String",
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"direction": "Input"
+								},
+								{
+									"name": "pipelinename",
+									"type": "String",
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"direction": "Input"
+								}
+							],
+							"type": "Query",
+							"text": {
+								"value": "INSERT INTO main_table (Process_id, Process_name, Source_data, Status, Date, Timestamp)\nVALUES (@pipelineid,@pipelinename,'Output/SC/SC_Projects.csv', 'Success', GETDATE(), GETDATE());\n",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "Updating Main Table On Fail",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "Transformations - Adding Upload TimeStamp",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"parameters": [
+								{
+									"name": "pipelineid",
+									"type": "String",
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"direction": "Input"
+								},
+								{
+									"name": "pipelinename",
+									"type": "String",
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"direction": "Input"
+								}
+							],
+							"type": "Query",
+							"text": {
+								"value": "INSERT INTO main_table (Process_id, Process_name, Source_data, Status, Date, Timestamp)\nVALUES (@pipelineid,@pipelinename,'Output/SC/SC-Projects.csv', 'Fail', GETDATE(), GETDATE());\n",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"folder": {
+			"name": "Maan_Github_Integration/Transform_data_pipelines/Sharepoint"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-05-22T10:05:11Z"
+	}
+}

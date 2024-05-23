@@ -1,0 +1,119 @@
+{
+	"name": "Tranformation_dataflow_SC_Projects",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DataFlow_Dataset_SC_projects",
+						"type": "DatasetReference"
+					},
+					"name": "dataflowscprojects"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_SQL_SC_projects",
+						"type": "DatasetReference"
+					},
+					"name": "SCProjects"
+				}
+			],
+			"transformations": [
+				{
+					"name": "addingdateTime"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Theme as string,",
+				"          {Project ID} as short,",
+				"          {Project Name} as string,",
+				"          {Project Brief} as string,",
+				"          {Project Status} as string,",
+				"          {Project Start} as string,",
+				"          {Project End} as string,",
+				"          {Type of Contract} as string,",
+				"          {Project Cost} as string,",
+				"          {Allocated Budget} as string,",
+				"          Source as string,",
+				"          Remaining as string,",
+				"          {Source of Remaining} as string,",
+				"          {Project Manager} as string,",
+				"          {Project Lead} as string,",
+				"          {Support Team} as string,",
+				"          {Fund Raised By} as string,",
+				"          Sectors as string,",
+				"          {Support By} as string,",
+				"          {Ghadan Project (Yes/No)} as boolean,",
+				"          {Vintage (New/Ongoing)} as string,",
+				"          Status as string,",
+				"          {Total Estimated Budget} as string,",
+				"          {Proposed Estimated Budget} as string,",
+				"          {Budget spent YTD} as string,",
+				"          {Approved Budget CY} as string,",
+				"          {Social Sector Objective} as string,",
+				"          Department as string,",
+				"          {Entity Implementing the project} as string,",
+				"          {Source of Fund} as string,",
+				"          Owner as string,",
+				"          {Project Type (Strategic / Operational)} as string,",
+				"          {Thematic Strategy} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> dataflowscprojects",
+				"dataflowscprojects derive({Upload Date} = currentUTC()) ~> addingdateTime",
+				"addingdateTime sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Theme,",
+				"          {Project ID},",
+				"          {Project Name},",
+				"          {Project Brief},",
+				"          {Project Status},",
+				"          {Project Start},",
+				"          {Project End},",
+				"          {Type of Contract},",
+				"          {Project Cost},",
+				"          {Allocated Budget},",
+				"          Source,",
+				"          Remaining,",
+				"          {Source of Remaining},",
+				"          {Project Manager},",
+				"          {Project Lead},",
+				"          {Support Team},",
+				"          {Fund Raised By},",
+				"          Sectors,",
+				"          {Support By},",
+				"          {Ghadan Project (Yes/No)},",
+				"          {Vintage (New/Ongoing)},",
+				"          Status,",
+				"          {Total Estimated Budget},",
+				"          {Proposed Estimated Budget},",
+				"          {Budget spent YTD},",
+				"          {Approved Budget CY},",
+				"          {Social Sector Objective},",
+				"          Department,",
+				"          {Entity Implementing the project},",
+				"          {Source of Fund},",
+				"          Owner,",
+				"          {Project Type (Strategic / Operational)},",
+				"          {Thematic Strategy},",
+				"          {Upload Date}",
+				"     )) ~> SCProjects"
+			]
+		}
+	}
+}
