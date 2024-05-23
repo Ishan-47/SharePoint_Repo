@@ -1,0 +1,1548 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "lz-genai-datafactory"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"AzureSqlDatabase1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://lzgenaigen2.dfs.core.windows.net/"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "lzsqlsrvdev01.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "Maan_Transformed_Data"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "sqladmin"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Backup_ppl_Sharepoint')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Backup Sharepoint data",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ""
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DelimitedText21",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DelimitedText22",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Maan_Github_Integration/Backup_data_pipelines"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-05-22T06:31:41Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DelimitedText21')]",
+				"[concat(variables('factoryId'), '/datasets/DelimitedText22')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy_files_from_multiple_folders_into_destination-1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Folder Info",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "Binary1",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Folder Info",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Folder Info').output.childItems",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Execute Pipeline1",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Copy_files_from_multiple_folders_into_destination-2",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"ParentFolder": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Maan_Github_Integration/Import_data_pipelines/Sharepoint"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-05-21T11:29:26Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Binary1')]",
+				"[concat(variables('factoryId'), '/pipelines/Copy_files_from_multiple_folders_into_destination-2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy_files_from_multiple_folders_into_destination-2')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "FileInfo",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "Binary2",
+								"type": "DatasetReference",
+								"parameters": {
+									"Folder": {
+										"value": "@pipeline().parameters.ParentFolder",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "FileInfo",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('FileInfo').output.childItems",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Copy data1",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"wildcardFileName": "*",
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".csv"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "DelimitedText18",
+											"type": "DatasetReference",
+											"parameters": {
+												"Folder": {
+													"value": "@pipeline().parameters.ParentFolder",
+													"type": "Expression"
+												},
+												"File": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DelimitedText19",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"ParentFolder": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Maan_Github_Integration/Import_data_pipelines/Sharepoint"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-05-21T11:29:26Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Binary2')]",
+				"[concat(variables('factoryId'), '/datasets/DelimitedText18')]",
+				"[concat(variables('factoryId'), '/datasets/DelimitedText19')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Master_Ingestion_Backup_Transformation_Sharepoint')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data Ingestion",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Copy_files_from_multiple_folders_into_destination-1",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Taking Backup",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Data Ingestion",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Backup_ppl_Sharepoint",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Transformation ADEO-Customers",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Data Ingestion",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Transforming_Data_ADEO",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Transformation SC - Projects",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Data Ingestion",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Transforming_Data_SC",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Maan_Github_Integration/WorkFlow/Sharepoint"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-05-22T11:34:34Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Copy_files_from_multiple_folders_into_destination-1')]",
+				"[concat(variables('factoryId'), '/pipelines/Backup_ppl_Sharepoint')]",
+				"[concat(variables('factoryId'), '/pipelines/Transforming_Data_ADEO')]",
+				"[concat(variables('factoryId'), '/pipelines/Transforming_Data_SC')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Transforming_Data_ADEO')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Transformations - Adding Upload TimeStamp",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Create Table If Not Exits",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Tranformation_dataflow_ADEO",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"adeo": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Create Table If Not Exits",
+						"type": "Script",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Customers')\r\nBEGIN\r\n    CREATE TABLE dbo.Customers (\r\n        CustomerID VARCHAR(255),\r\n        FirstName VARCHAR(255) ,\r\n        LastName VARCHAR(255) ,\r\n        Email VARCHAR(255),\r\n        PhoneNumber VARCHAR(50),\r\n        UploadDate DATE\r\n    );\r\nEND\r\n"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					},
+					{
+						"name": "Updating Main Table On Sucess",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "Transformations - Adding Upload TimeStamp",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"parameters": [
+										{
+											"name": "pipelineid",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().RunId",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										},
+										{
+											"name": "pipelinename",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().Pipeline",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										}
+									],
+									"type": "Query",
+									"text": {
+										"value": "INSERT INTO main_table (Process_id, Process_name, Source_data, Status, Date, Timestamp)\nVALUES (@pipelineid,@pipelinename,'Client/ADEO/Customers.csv', 'Success', GETDATE(), GETDATE());\n",
+										"type": "Expression"
+									}
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					},
+					{
+						"name": "Updating Main Table On Fail",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "Transformations - Adding Upload TimeStamp",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"parameters": [
+										{
+											"name": "pipelineid",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().RunId",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										},
+										{
+											"name": "pipelinename",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().Pipeline",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										}
+									],
+									"type": "Query",
+									"text": {
+										"value": "INSERT INTO main_table (Process_id, Process_name, Source_data, Status, Date, Timestamp)\nVALUES (@pipelineid,@pipelinename,'Client/ADEO/Customers.csv', 'Fail', GETDATE(), GETDATE());\n",
+										"type": "Expression"
+									}
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Maan_Github_Integration/Transform_data_pipelines/Sharepoint"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-05-22T10:05:11Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Tranformation_dataflow_ADEO')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Transforming_Data_SC')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Transformations - Adding Upload TimeStamp",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Create Table If Not Exits",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Tranformation_dataflow_SC_Projects",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"dataflowscprojects": {},
+									"SCProjects": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Create Table If Not Exits",
+						"type": "Script",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'sc')\r\nBEGIN\r\n    CREATE TABLE sc (\r\n    Theme VARCHAR(255),\r\n    ProjectID INT,\r\n    ProjectName VARCHAR(255),\r\n    ProjectBrief VARCHAR(8000),\r\n    ProjectStatus VARCHAR(255),\r\n    ProjectStart DATE,\r\n    ProjectEnd DATE,\r\n    TypeOfContract VARCHAR(255),\r\n    ProjectCost DECIMAL(18, 2),\r\n    AllocatedBudget DECIMAL(18, 2),\r\n    Source VARCHAR(255),\r\n    Remaining DECIMAL(18, 2),\r\n    SourceOfRemaining VARCHAR(255),\r\n    ProjectManager VARCHAR(255),\r\n    ProjectLead VARCHAR(255),\r\n    SupportTeam VARCHAR(255),\r\n    FundRaisedBy VARCHAR(255),\r\n    Sectors VARCHAR(255),\r\n    SupportBy VARCHAR(255),\r\n    GhadanProject BIT,\r\n    Vintage VARCHAR(255),\r\n    Status VARCHAR(255),\r\n    TotalEstimatedBudget DECIMAL(18, 2),\r\n    ProposedEstimatedBudget DECIMAL(18, 2),\r\n    BudgetSpentYTD DECIMAL(18, 2),\r\n    ApprovedBudgetCY DECIMAL(18, 2),\r\n    SocialSectorObjective VARCHAR(255),\r\n    Department VARCHAR(255),\r\n    EntityImplementingTheProject VARCHAR(255),\r\n    SourceOfFund VARCHAR(255),\r\n    Owner VARCHAR(255),\r\n    ProjectType VARCHAR(255),\r\n    ThematicStrategy VARCHAR(255),\r\n    UploadDate DATE\r\n    );\r\nEND\r\n"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					},
+					{
+						"name": "Updating Main Table On Sucess",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "Transformations - Adding Upload TimeStamp",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"parameters": [
+										{
+											"name": "pipelineid",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().RunId",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										},
+										{
+											"name": "pipelinename",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().Pipeline",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										}
+									],
+									"type": "Query",
+									"text": {
+										"value": "INSERT INTO main_table (Process_id, Process_name, Source_data, Status, Date, Timestamp)\nVALUES (@pipelineid,@pipelinename,'Output/SC/SC_Projects.csv', 'Success', GETDATE(), GETDATE());\n",
+										"type": "Expression"
+									}
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					},
+					{
+						"name": "Updating Main Table On Fail",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "Transformations - Adding Upload TimeStamp",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"parameters": [
+										{
+											"name": "pipelineid",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().RunId",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										},
+										{
+											"name": "pipelinename",
+											"type": "String",
+											"value": {
+												"value": "@pipeline().Pipeline",
+												"type": "Expression"
+											},
+											"direction": "Input"
+										}
+									],
+									"type": "Query",
+									"text": {
+										"value": "INSERT INTO main_table (Process_id, Process_name, Source_data, Status, Date, Timestamp)\nVALUES (@pipelineid,@pipelinename,'Output/SC/SC-Projects.csv', 'Fail', GETDATE(), GETDATE());\n",
+										"type": "Expression"
+									}
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Maan_Github_Integration/Transform_data_pipelines/Sharepoint"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-05-22T10:05:11Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Tranformation_dataflow_SC_Projects')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable9')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "customers"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Binary1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "client"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Binary2')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"Folder": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "client"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DataFlow_Dataset_SC_projects')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "sc_project.csv",
+						"folderPath": "SC",
+						"fileSystem": "output"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Email",
+						"type": "String"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataset_SQL_SC_projects')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "sc"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText18')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"Folder": {
+						"type": "string"
+					},
+					"File": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "client"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Theme",
+						"type": "String"
+					},
+					{
+						"name": "Project ID",
+						"type": "String"
+					},
+					{
+						"name": "Project Name",
+						"type": "String"
+					},
+					{
+						"name": "Project Brief",
+						"type": "String"
+					},
+					{
+						"name": "Project Status",
+						"type": "String"
+					},
+					{
+						"name": "Project Start",
+						"type": "String"
+					},
+					{
+						"name": "Project End",
+						"type": "String"
+					},
+					{
+						"name": "Type of Contract",
+						"type": "String"
+					},
+					{
+						"name": "Project Cost",
+						"type": "String"
+					},
+					{
+						"name": "Allocated Budget",
+						"type": "String"
+					},
+					{
+						"name": "Source",
+						"type": "String"
+					},
+					{
+						"name": "Remaining",
+						"type": "String"
+					},
+					{
+						"name": "Source of Remaining",
+						"type": "String"
+					},
+					{
+						"name": "Project Manager",
+						"type": "String"
+					},
+					{
+						"name": "Project Lead",
+						"type": "String"
+					},
+					{
+						"name": "Support Team",
+						"type": "String"
+					},
+					{
+						"name": "Fund Raised By",
+						"type": "String"
+					},
+					{
+						"name": "Sectors",
+						"type": "String"
+					},
+					{
+						"name": "Support By",
+						"type": "String"
+					},
+					{
+						"name": "Ghadan Project (Yes/No)",
+						"type": "String"
+					},
+					{
+						"name": "Vintage (New/Ongoing)",
+						"type": "String"
+					},
+					{
+						"name": "Status",
+						"type": "String"
+					},
+					{
+						"name": "Total Estimated Budget",
+						"type": "String"
+					},
+					{
+						"name": "Proposed Estimated Budget",
+						"type": "String"
+					},
+					{
+						"name": "Budget spent YTD",
+						"type": "String"
+					},
+					{
+						"name": "Approved Budget CY",
+						"type": "String"
+					},
+					{
+						"name": "Social Sector Objective",
+						"type": "String"
+					},
+					{
+						"name": "Department",
+						"type": "String"
+					},
+					{
+						"name": "Entity Implementing the project",
+						"type": "String"
+					},
+					{
+						"name": "Source of Fund",
+						"type": "String"
+					},
+					{
+						"name": "Owner",
+						"type": "String"
+					},
+					{
+						"name": "Project Type (Strategic / Operational)",
+						"type": "String"
+					},
+					{
+						"name": "Thematic Strategy",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText19')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "output"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText20')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "customer.csv",
+						"folderPath": "ADEO",
+						"fileSystem": "output"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Email",
+						"type": "String"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText21')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "client"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText22')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "Sharepoint/@{concat(formatDateTime(convertTimeZone(utcnow(), 'UTC', 'India Standard Time'), 'dd-MM-yyyy'), ' ', formatDateTime(convertTimeZone(utcnow(), 'UTC', 'India Standard Time'), 'HH:mm:ss'))}",
+							"type": "Expression"
+						},
+						"fileSystem": "backup"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]",
+					"database": "[parameters('AzureSqlDatabase1_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"hostNameInCertificate": "",
+					"authenticationType": "SQL",
+					"userName": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('AzureSqlDatabase1_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Tranformation_dataflow_ADEO')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DelimitedText20",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable9",
+								"type": "DatasetReference"
+							},
+							"name": "adeo"
+						}
+					],
+					"transformations": [
+						{
+							"name": "addingdateTime"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          CustomerID as string,",
+						"          FirstName as string,",
+						"          LastName as string,",
+						"          Email as string,",
+						"          PhoneNumber as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source1 derive({Upload Date} = currentUTC()) ~> addingdateTime",
+						"addingdateTime sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> adeo"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DelimitedText20')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable9')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Tranformation_dataflow_SC_Projects')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DataFlow_Dataset_SC_projects",
+								"type": "DatasetReference"
+							},
+							"name": "dataflowscprojects"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_SQL_SC_projects",
+								"type": "DatasetReference"
+							},
+							"name": "SCProjects"
+						}
+					],
+					"transformations": [
+						{
+							"name": "addingdateTime"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Theme as string,",
+						"          {Project ID} as short,",
+						"          {Project Name} as string,",
+						"          {Project Brief} as string,",
+						"          {Project Status} as string,",
+						"          {Project Start} as string,",
+						"          {Project End} as string,",
+						"          {Type of Contract} as string,",
+						"          {Project Cost} as string,",
+						"          {Allocated Budget} as string,",
+						"          Source as string,",
+						"          Remaining as string,",
+						"          {Source of Remaining} as string,",
+						"          {Project Manager} as string,",
+						"          {Project Lead} as string,",
+						"          {Support Team} as string,",
+						"          {Fund Raised By} as string,",
+						"          Sectors as string,",
+						"          {Support By} as string,",
+						"          {Ghadan Project (Yes/No)} as boolean,",
+						"          {Vintage (New/Ongoing)} as string,",
+						"          Status as string,",
+						"          {Total Estimated Budget} as string,",
+						"          {Proposed Estimated Budget} as string,",
+						"          {Budget spent YTD} as string,",
+						"          {Approved Budget CY} as string,",
+						"          {Social Sector Objective} as string,",
+						"          Department as string,",
+						"          {Entity Implementing the project} as string,",
+						"          {Source of Fund} as string,",
+						"          Owner as string,",
+						"          {Project Type (Strategic / Operational)} as string,",
+						"          {Thematic Strategy} as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> dataflowscprojects",
+						"dataflowscprojects derive({Upload Date} = currentUTC()) ~> addingdateTime",
+						"addingdateTime sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Theme,",
+						"          {Project ID},",
+						"          {Project Name},",
+						"          {Project Brief},",
+						"          {Project Status},",
+						"          {Project Start},",
+						"          {Project End},",
+						"          {Type of Contract},",
+						"          {Project Cost},",
+						"          {Allocated Budget},",
+						"          Source,",
+						"          Remaining,",
+						"          {Source of Remaining},",
+						"          {Project Manager},",
+						"          {Project Lead},",
+						"          {Support Team},",
+						"          {Fund Raised By},",
+						"          Sectors,",
+						"          {Support By},",
+						"          {Ghadan Project (Yes/No)},",
+						"          {Vintage (New/Ongoing)},",
+						"          Status,",
+						"          {Total Estimated Budget},",
+						"          {Proposed Estimated Budget},",
+						"          {Budget spent YTD},",
+						"          {Approved Budget CY},",
+						"          {Social Sector Objective},",
+						"          Department,",
+						"          {Entity Implementing the project},",
+						"          {Source of Fund},",
+						"          Owner,",
+						"          {Project Type (Strategic / Operational)},",
+						"          {Thematic Strategy},",
+						"          {Upload Date}",
+						"     )) ~> SCProjects"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DataFlow_Dataset_SC_projects')]",
+				"[concat(variables('factoryId'), '/datasets/Dataset_SQL_SC_projects')]"
+			]
+		}
+	]
+}
